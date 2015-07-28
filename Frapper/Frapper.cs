@@ -69,9 +69,9 @@ namespace Frapper
             //create a process info
             ProcessStartInfo oInfo = new ProcessStartInfo(this._ffExe, Parameters);
             oInfo.UseShellExecute = false;
-            oInfo.CreateNoWindow = true;
-            oInfo.RedirectStandardOutput = true;
-            oInfo.RedirectStandardError = true;
+            oInfo.CreateNoWindow = false;
+            oInfo.RedirectStandardOutput = false;
+            oInfo.RedirectStandardError = false;
 
             //Create the output and streamreader to get the output
             string output = null; StreamReader srOutput = null;
@@ -88,7 +88,8 @@ namespace Frapper
                 srOutput = proc.StandardError;
 
                 //now put it in a string
-                output = srOutput.ReadToEnd();
+                //output = srOutput.ReadToEnd();
+                output = string.Empty;
 
                 proc.Close();
             }
