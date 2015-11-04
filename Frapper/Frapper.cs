@@ -21,6 +21,13 @@ namespace Frapper
                 _ffExe = value;
             }
         }
+
+        public event DataReceivedEventHandler ErrorDataReceived;
+
+        public event DataReceivedEventHandler OutputDataReceived;
+
+        public event EventHandler Exited;
+
         #endregion
 
         #region Constructors
@@ -64,7 +71,7 @@ namespace Frapper
         #endregion
 
         #region Run the process
-        public string RunCommand(string Parameters)
+        public void RunCommand(string Parameters)
         {
             //create a process info
             ProcessStartInfo oInfo = new ProcessStartInfo(this._ffExe, Parameters);
@@ -73,39 +80,39 @@ namespace Frapper
             oInfo.RedirectStandardOutput = true;
             oInfo.RedirectStandardError = true;
 
-            //Create the output and streamreader to get the output
-            string output = null; StreamReader srOutput = null;
-
             //try the process
             try
             {
                 //run the process
-                Process proc = System.Diagnostics.Process.Start(oInfo);
+                Process proc = new Process { StartInfo = oInfo, EnableRaisingEvents = true };
+
+                proc.OutputDataReceived += (object sender, System.Diagnostics.DataReceivedEventArgs e) =>
+                {
+                    if (OutputDataReceived != null)
+                        OutputDataReceived(sender, e);
+                };
+                proc.ErrorDataReceived += (object sender, System.Diagnostics.DataReceivedEventArgs e) =>
+                {
+                    if (ErrorDataReceived != null)
+                        ErrorDataReceived(sender, e);
+                };
+                proc.Exited += (object sender, EventArgs e) =>
+                {
+                    if (Exited != null)
+                        Exited(sender, e);
+                };
+
+                proc.Start();
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
 
                 proc.WaitForExit();
-
-                //get the output
-                srOutput = proc.StandardError;
-
-                //now put it in a string
-                output = srOutput.ReadToEnd();
 
                 proc.Close();
             }
             catch (Exception)
             {
-                output = string.Empty;
             }
-            finally
-            {
-                //now, if we succeded, close out the streamreader
-                if (srOutput != null)
-                {
-                    srOutput.Close();
-                    srOutput.Dispose();
-                }
-            }
-            return output;
         }
         #endregion
     }
