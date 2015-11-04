@@ -74,44 +74,44 @@ namespace Frapper
         public void RunCommand(string Parameters)
         {
             //create a process info
-            ProcessStartInfo oInfo = new ProcessStartInfo(this._ffExe, Parameters);
+            ProcessStartInfo oInfo = new ProcessStartInfo(this._ffExe, "-nostdin " + Parameters);
             oInfo.UseShellExecute = false;
             oInfo.CreateNoWindow = true;
             oInfo.RedirectStandardOutput = true;
             oInfo.RedirectStandardError = true;
 
-            //try the process
-            try
+            //run the process
+            Process proc = new Process { StartInfo = oInfo, EnableRaisingEvents = true };
+
+            proc.OutputDataReceived += (object sender, System.Diagnostics.DataReceivedEventArgs e) =>
             {
-                //run the process
-                Process proc = new Process { StartInfo = oInfo, EnableRaisingEvents = true };
-
-                proc.OutputDataReceived += (object sender, System.Diagnostics.DataReceivedEventArgs e) =>
-                {
-                    if (OutputDataReceived != null)
-                        OutputDataReceived(sender, e);
-                };
-                proc.ErrorDataReceived += (object sender, System.Diagnostics.DataReceivedEventArgs e) =>
-                {
-                    if (ErrorDataReceived != null)
-                        ErrorDataReceived(sender, e);
-                };
-                proc.Exited += (object sender, EventArgs e) =>
-                {
-                    if (Exited != null)
-                        Exited(sender, e);
-                };
-
-                proc.Start();
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-
-                proc.WaitForExit();
-
-                proc.Close();
-            }
-            catch (Exception)
+                if (OutputDataReceived != null)
+                    OutputDataReceived(sender, e);
+            };
+            proc.ErrorDataReceived += (object sender, System.Diagnostics.DataReceivedEventArgs e) =>
             {
+                if (ErrorDataReceived != null)
+                    ErrorDataReceived(sender, e);
+            };
+            proc.Exited += (object sender, EventArgs e) =>
+            {
+                if (Exited != null)
+                    Exited(sender, e);
+            };
+
+            proc.Start();
+            proc.BeginOutputReadLine();
+            proc.BeginErrorReadLine();
+
+            proc.WaitForExit();
+
+            var exitCode = proc.ExitCode;
+
+            proc.Close();
+
+            if (exitCode != 0)
+            {
+                throw new ApplicationException("Process failed by ExitCode " + exitCode);
             }
         }
         #endregion
